@@ -1,27 +1,8 @@
 #pragma once
 
-#ifdef __cplusplus
-#include <string>
-#include <memory>
-#include <algorithm>
-#include <utility>
-#include <functional>
-#include <thread>
-#include <array>
-#include <tuple>
-#include <vector>
-#include <chrono>
-#else
-#include <cmath>
-#include <ctime>
-#include <cstdio>
-#include <cstdlib>
-#endif
+#include "IncludeMe.hpp"
 
-#include <TlHelp32.h>
-#include <WinBase.h>
-
-class API
+class WS2VI
 {
 private:
 	const char* nAddr = ("127.0.0.1");
