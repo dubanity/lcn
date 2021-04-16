@@ -18,5 +18,11 @@
     <ClInclude Include="WS2VersionInfo.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="IncludeMe.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UID.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

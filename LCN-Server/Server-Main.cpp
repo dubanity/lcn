@@ -8,7 +8,8 @@
 
 #include <WinSock2.h>
 #include <WS2tcpip.h>
-
+#include "IncludeMe.hpp"
+#include "UID.hpp"
 #include "WS2VersionInfo.hpp"
 #include <ctime>
 
@@ -25,8 +26,8 @@ class MySQL
 protected:
 	const char* hostname = "localhost";
 	const char* username = "root";
-	const char* passwd = "<enter password here>";
-	const char* dbName = "<enter database name here>";
+	const char* passwd = "oracle";
+	const char* dbName = "";
 	uint32_t port = 3306;
 public:
 	MySQL() {};
@@ -58,6 +59,7 @@ public:
 		std::cout << "------------------------------\n";
 		std::cout << std::endl;
 	}
+
 	void CreateTable(const std::string& tbName, const std::string& colName) const
 	{
 		int qState;
@@ -170,12 +172,13 @@ public:
 	}
 };
 
-API api;
+WS2VI ws2vi;
+UID uid;
 MySQL db;
 
-uint32_t nReqVersion = api.GetVersion();
-uint32_t nPort = api.GetPort();
-const char* nAddr = api.GetAddress();
+uint32_t nReqVersion = ws2vi.GetVersion();
+uint32_t nPort = ws2vi.GetPort();
+const char* nAddr = ws2vi.GetAddress();
 
 int main(int argc, const char* argv[])
 {
@@ -244,6 +247,8 @@ int main(int argc, const char* argv[])
 						WSACleanup();
 						ExitProcess(EXIT_SUCCESS);
 					}
+
+					std::cout << std::string(buffer, NULL, rBytes) << std::endl;
 
 					if (send(hRemoteSocket, buffer, rBytes, 0) == SOCKET_ERROR)
 					{
