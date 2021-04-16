@@ -8,18 +8,18 @@
 
 #include <WinSock2.h>
 #include <WS2tcpip.h>
-#include "IncludeMe.hpp"
+
 #include "WS2VersionInfo.hpp"
 
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
-WS2VI ws2vi;
+API api;
 
-uint32_t nReqVersion = ws2vi.GetVersion();
-uint32_t nPort = ws2vi.GetPort();
-const char* nAddr = ws2vi.GetAddress();
+uint32_t nReqVersion = api.GetVersion();
+uint32_t nPort = api.GetPort();
+const char* nAddr = api.GetAddress();
 
 class CL
 {
@@ -80,10 +80,6 @@ int main(int argc, char* argv[])
 				char responseBuffer[4096];
 				std::string uInput;
 				CL cl;
-
-				std::cout << "init some stuff" << std::endl;
-				std::this_thread::sleep_for(8s);
-				std::cout << "done waiting" << std::endl;
 
 				do
 				{
