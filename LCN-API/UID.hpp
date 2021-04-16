@@ -59,7 +59,7 @@ public:
 
         std::stringstream r;
 
-        r << "Key_" << UID_l[0] << "-" << UID_l[1] << "-" << UID_l[2];
+        r << UID_l[0] << "-" << UID_l[1] << "-" << UID_l[2];
         auto rf = r.str();
 
         return rf;
