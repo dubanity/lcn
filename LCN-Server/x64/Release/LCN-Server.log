@@ -1,6 +1,8 @@
 ﻿  Server-Main.cpp
+     Creating library C:\Users\USER\Downloads\GitHub\LCN\x64\Release\LCN-Server.lib and object C:\Users\USER\Downloads\GitHub\LCN\x64\Release\LCN-Server.exp
   Generating code
-  Previous IPDB not found, fall back to full compilation.
-  All 103 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  0 of 193 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   LCN-Server.vcxproj -> C:\Users\USER\Downloads\GitHub\LCN\x64\Release\LCN-Server.exe

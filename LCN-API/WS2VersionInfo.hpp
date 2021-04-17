@@ -7,7 +7,8 @@ class WS2VI
 private:
 	const char* nAddr = ("127.0.0.1");
 	const uint32_t nReqVersion = 2;
-	const uint32_t nPort = 54000;
+	const uint32_t nCommunicationsPort = 54000;
+	const uint32_t nRegistrationPort = 54005;
 
 public:
 	const char* GetAddress() const
@@ -15,13 +16,18 @@ public:
 		return nAddr;
 	}
 
-	uint32_t GetPort() const
+	uint32_t GetCommunicationsPort() const
 	{
-		return nPort;
+		return nCommunicationsPort;
 	}
 
 	uint32_t GetVersion() const
 	{
 		return nReqVersion;
+	}
+
+	uint32_t GetRegistrationPort() const
+	{
+		return nRegistrationPort;
 	}
 };

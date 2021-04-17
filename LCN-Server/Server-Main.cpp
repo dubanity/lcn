@@ -27,7 +27,7 @@ protected:
 	const char* hostname = "localhost";
 	const char* username = "root";
 	const char* passwd = "oracle";
-	const char* dbName = "";
+	const char* dbName = "db";
 	uint32_t port = 3306;
 public:
 	MySQL() {};
@@ -177,8 +177,144 @@ UID uid;
 MySQL db;
 
 uint32_t nReqVersion = ws2vi.GetVersion();
-uint32_t nPort = ws2vi.GetPort();
+uint32_t nCommunicationsPort = ws2vi.GetCommunicationsPort();
+uint32_t nRegistrationPort = ws2vi.GetRegistrationPort();
 const char* nAddr = ws2vi.GetAddress();
+
+void StartRegistration()
+{
+	SOCKET fdRegistration = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	switch (fdRegistration)
+	{
+	case INVALID_SOCKET:
+		std::cerr << "[WS2]> Failed to initialize registration socket for local server." << std::endl;
+		WSACleanup();
+		break;
+	default:
+		sockaddr_in saRegServer;
+		saRegServer.sin_family = AF_INET;
+		saRegServer.sin_port = htons(nRegistrationPort);
+		saRegServer.sin_addr.s_addr = inet_addr(nAddr);
+
+		int bResult = bind(fdRegistration, reinterpret_cast<sockaddr*>(&saRegServer), sizeof(saRegServer));
+		int lResult = listen(fdRegistration, SOMAXCONN);
+
+		std::cout << "[WS2]> Server started successfully, no errors to report." << std::endl;
+
+		sockaddr_in rClService;
+		int rClSize = sizeof(rClService);
+
+		SOCKET hRemoteSocket = accept(fdRegistration, reinterpret_cast<sockaddr*>(&rClService), &rClSize);
+		switch (hRemoteSocket)
+		{
+		case SOCKET_ERROR:
+			break;
+		default:
+			break;
+		}
+
+		char CredentialBuffer[4096];
+
+		while (true)
+		{
+			memset(&CredentialBuffer, 0, 4096);
+
+			int rCredBytes = recv(hRemoteSocket, CredentialBuffer, 4096, 0);
+			if (rCredBytes == 0)
+			{
+				WSACleanup();
+				ExitProcess(EXIT_FAILURE);
+			}
+
+			db.CreateTable("Accounts", "Username");
+			db.InsertKey("Accounts", "Username", CredentialBuffer);
+			db.QueryTable("Accounts", 1);
+
+			break;
+		}
+
+		closesocket(hRemoteSocket);
+		closesocket(fdRegistration);
+	}
+}
+
+void StartCommunication()
+{
+	SOCKET fdConversation = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	switch (fdConversation)
+	{
+	case INVALID_SOCKET:
+		std::cerr << "[WS2]> Failed initialize conversational socket for local server." << std::endl;
+		WSACleanup();
+		break;
+	default:
+		sockaddr_in saComServer;
+		saComServer.sin_family = AF_INET;
+		saComServer.sin_port = htons(nCommunicationsPort);
+		saComServer.sin_addr.s_addr = inet_addr(nAddr);
+
+		int bResult = bind(fdConversation, reinterpret_cast<sockaddr*>(&saComServer), sizeof(saComServer));
+		int lResult = listen(fdConversation, SOMAXCONN);
+
+		std::cout << "[WS2]> Server started successfully, no errors to report." << std::endl;
+
+		sockaddr_in rClService;
+		int rClSize = sizeof(rClService);
+
+		SOCKET hRemoteSocket = accept(fdConversation, reinterpret_cast<sockaddr*>(&rClService), &rClSize);
+		switch (hRemoteSocket)
+		{
+		case SOCKET_ERROR:
+			break;
+		default:
+			break;
+		}
+
+		char host[NI_MAXHOST];
+		char service[NI_MAXSERV];
+
+		memset(&host, 0, sizeof(host));
+		memset(&service, 0, sizeof(service));
+
+		if (getnameinfo(reinterpret_cast<sockaddr*>(&rClService), rClSize, host, NI_MAXHOST, service, NI_MAXSERV, 0) == NULL)
+		{
+			std::cout << host << " connected on port " << service << std::endl;
+		}
+		else
+		{
+			inet_ntop(AF_INET, &rClService.sin_addr, host, NI_MAXHOST);
+			std::cout << host << " connected on port " << ntohs(rClService.sin_port) << std::endl;
+		}
+
+		closesocket(fdConversation);
+
+		char MsgBuffer[4096];
+
+		while (true)
+		{
+			memset(&MsgBuffer, 0, 4096);
+
+			int rBytes = recv(hRemoteSocket, MsgBuffer, 4096, 0);
+			if (rBytes == 0)
+			{
+				WSACleanup();
+				ExitProcess(EXIT_SUCCESS);
+			}
+
+			std::cout << std::string(MsgBuffer, NULL, rBytes) << std::endl;
+
+			if (send(hRemoteSocket, MsgBuffer, rBytes, 0) == SOCKET_ERROR)
+			{
+				std::cerr << host << " has disconnected." << std::endl;
+				WSACleanup();
+				std::cin.get();
+				break;
+			}
+		}
+
+		closesocket(hRemoteSocket);
+	}
+}
 
 int main(int argc, const char* argv[])
 {
@@ -187,80 +323,11 @@ int main(int argc, const char* argv[])
 	{
 		if (LOBYTE(wsaData.wVersion >= nReqVersion))
 		{
-			SOCKET fdServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-			switch (fdServer)
-			{
-			case INVALID_SOCKET:
-				std::cerr << "[WS2]> Failed initialize socket for local server." << std::endl;
-				WSACleanup();
-				break;
-			default:
-				sockaddr_in saServer;
-				saServer.sin_family = AF_INET;
-				saServer.sin_port = htons(nPort);
-				saServer.sin_addr.s_addr = inet_addr(nAddr);
+			std::thread t2(StartRegistration);
 
-				int bResult = bind(fdServer, reinterpret_cast<sockaddr*>(&saServer), sizeof(saServer));
-				int lResult = listen(fdServer, SOMAXCONN);
+			t2.join();
 
-				std::cout << "[WS2]> Server started successfully, no errors to report." << std::endl;
-
-				sockaddr_in rClService;
-				int rClSize = sizeof(rClService);
-
-				SOCKET hRemoteSocket = accept(fdServer, reinterpret_cast<sockaddr*>(&rClService), &rClSize);
-				switch (hRemoteSocket)
-				{
-				case SOCKET_ERROR:
-					break;
-				default:
-					break;
-				}
-
-				char host[NI_MAXHOST];
-				char service[NI_MAXSERV];
-
-				memset(&host, 0, sizeof(host));
-				memset(&service, 0, sizeof(service));
-
-				if (getnameinfo(reinterpret_cast<sockaddr*>(&rClService), rClSize, host, NI_MAXHOST, service, NI_MAXSERV, 0) == NULL)
-				{
-					std::cout << host << " connected on port " << service << std::endl;
-				}
-				else
-				{
-					inet_ntop(AF_INET, &rClService.sin_addr, host, NI_MAXHOST);
-					std::cout << host << " connected on port " << ntohs(rClService.sin_port) << std::endl;
-				}
-
-				closesocket(fdServer);
-
-				char buffer[4096];
-
-				while (true)
-				{
-					memset(&buffer, 0, 4096);
-
-					int rBytes = recv(hRemoteSocket, buffer, 4096, 0);
-					if (rBytes == 0)
-					{
-						WSACleanup();
-						ExitProcess(EXIT_SUCCESS);
-					}
-
-					std::cout << std::string(buffer, NULL, rBytes) << std::endl;
-
-					if (send(hRemoteSocket, buffer, rBytes, 0) == SOCKET_ERROR)
-					{
-						std::cerr << host << " has disconnected." << std::endl;
-						WSACleanup();
-						std::cin.get();
-						break;
-					}
-				}
-
-				closesocket(hRemoteSocket);
-			}
+			StartCommunication();
 		}
 		else
 		{
