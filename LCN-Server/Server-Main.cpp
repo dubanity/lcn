@@ -12,7 +12,6 @@
 #include "UID.hpp"
 #include "WS2VersionInfo.hpp"
 #include <ctime>
-
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -176,10 +175,50 @@ WS2VI ws2vi;
 UID uid;
 MySQL db;
 
+#pragma region WS2Data
+
 uint32_t nReqVersion = ws2vi.GetVersion();
 uint32_t nCommunicationsPort = ws2vi.GetCommunicationsPort();
 uint32_t nRegistrationPort = ws2vi.GetRegistrationPort();
+uint32_t nStreamPort = ws2vi.GetStreamPort();
 const char* nAddr = ws2vi.GetAddress();
+
+#pragma endregion WS2Data
+
+#pragma region Prototypes
+
+void StartRegistration();
+void StartCommunication();
+void StartStream();
+
+#pragma endregion Prototypes
+
+int main(int argc, const char* argv[])
+{
+	WSADATA wsaData;
+	if (WSAStartup(MAKEWORD(nReqVersion, 0x00), &wsaData) == NULL)
+	{
+		if (LOBYTE(wsaData.wVersion >= nReqVersion))
+		{
+			std::cout << "[WS2]> Server started successfully. No errors to report." << std::endl;
+
+			std::thread t2(StartRegistration);
+
+			t2.join();
+
+			StartCommunication();
+		}
+		else
+		{
+			std::cout << "[WS2]> Requested version is not supported." << std::endl;
+		}
+	}
+	else
+	{
+		std::cout << "[WS2]> WinSock2 initial startup failed. Exiting program..." << std::endl;
+	}
+	ExitProcess(EXIT_SUCCESS);
+}
 
 void StartRegistration()
 {
@@ -187,7 +226,7 @@ void StartRegistration()
 	switch (fdRegistration)
 	{
 	case INVALID_SOCKET:
-		std::cerr << "[WS2]> Failed to initialize registration socket for local server." << std::endl;
+		std::cout << "[WS2]> Failed to initialize registration socket for local server." << std::endl;
 		WSACleanup();
 		break;
 	default:
@@ -199,13 +238,13 @@ void StartRegistration()
 		int bResult = bind(fdRegistration, reinterpret_cast<sockaddr*>(&saRegServer), sizeof(saRegServer));
 		int lResult = listen(fdRegistration, SOMAXCONN);
 
-		std::cout << "[WS2]> Server started successfully, no errors to report." << std::endl;
+		std::cout << "[S]> Starting registration service..." << std::endl;
 
 		sockaddr_in rClService;
 		int rClSize = sizeof(rClService);
 
-		SOCKET hRemoteSocket = accept(fdRegistration, reinterpret_cast<sockaddr*>(&rClService), &rClSize);
-		switch (hRemoteSocket)
+		SOCKET hrRemote = accept(fdRegistration, reinterpret_cast<sockaddr*>(&rClService), &rClSize);
+		switch (hrRemote)
 		{
 		case SOCKET_ERROR:
 			break;
@@ -215,25 +254,22 @@ void StartRegistration()
 
 		char CredentialBuffer[4096];
 
-		while (true)
+		memset(&CredentialBuffer, 0, 4096);
+
+		int rCredBytes = recv(hrRemote, CredentialBuffer, 4096, 0);
+		if (rCredBytes == 0)
 		{
-			memset(&CredentialBuffer, 0, 4096);
-
-			int rCredBytes = recv(hRemoteSocket, CredentialBuffer, 4096, 0);
-			if (rCredBytes == 0)
-			{
-				WSACleanup();
-				ExitProcess(EXIT_FAILURE);
-			}
-
-			db.CreateTable("Accounts", "Username");
-			db.InsertKey("Accounts", "Username", CredentialBuffer);
-			db.QueryTable("Accounts", 1);
-
-			break;
+			WSACleanup();
+			ExitProcess(EXIT_FAILURE);
 		}
 
-		closesocket(hRemoteSocket);
+		db.CreateTable("accounts", "username");
+		db.InsertKey("accounts", "username", CredentialBuffer);
+		db.QueryTable("accounts", 0);
+
+		std::cout << "[S]> Registration completed successfully. No errors to report." << std::endl;
+
+		closesocket(hrRemote);
 		closesocket(fdRegistration);
 	}
 }
@@ -244,7 +280,7 @@ void StartCommunication()
 	switch (fdConversation)
 	{
 	case INVALID_SOCKET:
-		std::cerr << "[WS2]> Failed initialize conversational socket for local server." << std::endl;
+		std::cout << "[WS2]> Failed initialize conversational socket for local server." << std::endl;
 		WSACleanup();
 		break;
 	default:
@@ -256,13 +292,13 @@ void StartCommunication()
 		int bResult = bind(fdConversation, reinterpret_cast<sockaddr*>(&saComServer), sizeof(saComServer));
 		int lResult = listen(fdConversation, SOMAXCONN);
 
-		std::cout << "[WS2]> Server started successfully, no errors to report." << std::endl;
+		std::cout << "[S]> Starting communications service..." << std::endl;
 
 		sockaddr_in rClService;
 		int rClSize = sizeof(rClService);
 
-		SOCKET hRemoteSocket = accept(fdConversation, reinterpret_cast<sockaddr*>(&rClService), &rClSize);
-		switch (hRemoteSocket)
+		SOCKET hcRemote = accept(fdConversation, reinterpret_cast<sockaddr*>(&rClService), &rClSize);
+		switch (hcRemote)
 		{
 		case SOCKET_ERROR:
 			break;
@@ -294,7 +330,7 @@ void StartCommunication()
 		{
 			memset(&MsgBuffer, 0, 4096);
 
-			int rBytes = recv(hRemoteSocket, MsgBuffer, 4096, 0);
+			int rBytes = recv(hcRemote, MsgBuffer, 4096, 0);
 			if (rBytes == 0)
 			{
 				WSACleanup();
@@ -303,40 +339,75 @@ void StartCommunication()
 
 			std::cout << std::string(MsgBuffer, NULL, rBytes) << std::endl;
 
-			if (send(hRemoteSocket, MsgBuffer, rBytes, 0) == SOCKET_ERROR)
+			if (send(hcRemote, MsgBuffer, rBytes, 0) == SOCKET_ERROR)
 			{
-				std::cerr << host << " has disconnected." << std::endl;
+				std::cout << host << " has disconnected." << std::endl;
 				WSACleanup();
 				std::cin.get();
 				break;
 			}
 		}
 
-		closesocket(hRemoteSocket);
+		closesocket(hcRemote);
 	}
 }
 
-int main(int argc, const char* argv[])
+void StartStream()
 {
-	WSADATA wsaData;
-	if (WSAStartup(MAKEWORD(nReqVersion, 0x00), &wsaData) == NULL)
+	SOCKET fdStream = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	switch (fdStream)
 	{
-		if (LOBYTE(wsaData.wVersion >= nReqVersion))
-		{
-			std::thread t2(StartRegistration);
+	case INVALID_SOCKET:
+		std::cout << "[WS2]> Failed to initialize streaming socket for local server." << std::endl;
+		WSACleanup();
+		break;
+	default:
+		sockaddr_in saStreamServer;
+		saStreamServer.sin_family = AF_INET;
+		saStreamServer.sin_port = htons(nStreamPort);
+		saStreamServer.sin_addr.s_addr = inet_addr(nAddr);
 
-			t2.join();
+		int bResult = bind(fdStream, reinterpret_cast<sockaddr*>(&saStreamServer), sizeof(saStreamServer));
+		int lResult = listen(fdStream, SOMAXCONN);
 
-			StartCommunication();
-		}
-		else
+		std::cout << "Starting stram service..." << std::endl;
+
+		sockaddr_in rClService;
+		int rClSize = sizeof(rClService);
+
+		SOCKET hsRemote = accept(fdStream, reinterpret_cast<sockaddr*>(&rClService), &rClSize);
+		switch (hsRemote)
 		{
-			std::cerr << "[WS2]> Requested version is not supported." << std::endl;
+		case SOCKET_ERROR:
+			break;
+		default:
+			break;
 		}
+
+		char MsgBuffer[8192];
+
+		while (true)
+		{
+			memset(MsgBuffer, 0, sizeof(MsgBuffer));
+
+			int rBytes = recv(hsRemote, MsgBuffer, 8192, 0);
+			if (rBytes == 0)
+			{
+				WSACleanup();
+				ExitProcess(EXIT_SUCCESS);
+			}
+
+			std::cout << std::string(MsgBuffer, NULL, rBytes) << std::endl;
+
+			if (send(hsRemote, MsgBuffer, rBytes, 0) == SOCKET_ERROR)
+			{
+				std::cout << "Stopped streaming information." << std::endl;
+				WSACleanup();
+				std::cin.get();
+				break;
+			}
+		}
+
+		closesocket(hsRemote);
 	}
-	else
-	{
-		std::cerr << "[WS2]> WinSock2 initial startup failed. Exiting program..." << std::endl;
-	}
-	ExitProcess(EXIT_SUCCESS);
 }

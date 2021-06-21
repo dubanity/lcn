@@ -2,10 +2,10 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\USER\Downloads\GitHub\LCN\x64\Release\LCN-API.exe</FullPath>
+      <FullPath>C:\GitHub\lcn\x64\Release\LCN-API.exe</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>C:\Users\USER\Downloads\GitHub\LCN\x64\Release\LCN-Server.exe</FullPath>
+      <FullPath>C:\GitHub\lcn\x64\Release\LCN-Server.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

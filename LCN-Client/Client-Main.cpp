@@ -10,18 +10,12 @@
 #include <WS2tcpip.h>
 #include "IncludeMe.hpp"
 #include "WS2VersionInfo.hpp"
-
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <future>
 
-WS2VI ws2vi;
-
-uint32_t nReqVersion = ws2vi.GetVersion();
-uint32_t nCommunicationsPort = ws2vi.GetCommunicationsPort();
-uint32_t nRegistrationPort = ws2vi.GetRegistrationPort();
-const char* nAddr = ws2vi.GetAddress();
+using namespace std::literals::chrono_literals;
 
 class CL
 {
@@ -36,7 +30,57 @@ public:
 	}
 };
 
-using namespace std::literals::chrono_literals;
+WS2VI ws2vi;
+
+#pragma region WS2Data
+
+uint32_t nReqVersion = ws2vi.GetVersion();
+uint32_t nCommunicationsPort = ws2vi.GetCommunicationsPort();
+uint32_t nRegistrationPort = ws2vi.GetRegistrationPort();
+const char* nAddr = ws2vi.GetAddress();
+
+#pragma endregion
+
+#pragma region Prototypes
+
+void DisplayNI(std::promise<std::string> promiseObject1);
+void StartRegistration(std::promise<std::string> promiseObject2);
+void StartCommunication(char* csDisplayName);
+
+#pragma endregion
+
+int main(int argc, char* argv[])
+{
+	WSADATA wsaData;
+	int wsOk = WSAStartup(MAKEWORD(nReqVersion, 0x00), &wsaData);
+	if (wsOk == NULL)
+	{
+		if (LOBYTE(wsaData.wVersion >= nReqVersion))
+		{
+			std::promise<std::string> promiseObject2;
+			auto futureObject = promiseObject2.get_future();
+			std::thread t2(StartRegistration, std::move(promiseObject2));
+			std::string ffDisplayName = futureObject.get();
+			char* csDisplayName = const_cast<char*>(ffDisplayName.c_str());
+
+			t2.join();
+
+			std::this_thread::sleep_for(2s);
+
+			StartCommunication(csDisplayName);
+		}
+		else
+		{
+			std::cout << "Requested version is not supported." << std::endl;
+		}
+	}
+	else
+	{
+		std::cout << "WinSock2 initial startup failed. Exiting program..." << std::endl;
+	}
+	WSACleanup();
+	ExitProcess(EXIT_SUCCESS);
+}
 
 void DisplayNI(std::promise<std::string> promiseObject1)
 {
@@ -63,7 +107,7 @@ void StartRegistration(std::promise<std::string> promiseObject2)
 	switch (fdRegistration)
 	{
 	case INVALID_SOCKET:
-		std::cerr << "Failed to fetch local server file descriptor. Code #" << WSAGetLastError() << std::endl;
+		std::cout << "Failed to fetch local server file descriptor. Code #" << WSAGetLastError() << std::endl;
 		WSACleanup();
 		break;
 	default:
@@ -78,7 +122,7 @@ void StartRegistration(std::promise<std::string> promiseObject2)
 		switch (connResult)
 		{
 		case SOCKET_ERROR:
-			std::cerr << "Could not connect to local server on specified port. Code #" << WSAGetLastError() << std::endl;
+			std::cout << "Could not connect to local server on specified port. Code #" << WSAGetLastError() << std::endl;
 			WSACleanup();
 			break;
 		default:
@@ -92,7 +136,7 @@ void StartRegistration(std::promise<std::string> promiseObject2)
 		}
 		else
 		{
-			std::cerr << "Failed to authenticate with local server." << std::endl;
+			std::cout << "Failed to authenticate with local server." << std::endl;
 			WSACleanup();
 			ExitProcess(EXIT_FAILURE);
 		}
@@ -105,7 +149,7 @@ void StartCommunication(char* csDisplayName)
 	switch (fdConversation)
 	{
 	case INVALID_SOCKET:
-		std::cerr << "Failed to fetch local server file descriptor. Code #" << WSAGetLastError() << std::endl;
+		std::cout << "Failed to fetch local server file descriptor. Code #" << WSAGetLastError() << std::endl;
 		WSACleanup();
 		break;
 	default:
@@ -120,7 +164,7 @@ void StartCommunication(char* csDisplayName)
 		switch (connResult)
 		{
 		case SOCKET_ERROR:
-			std::cerr << "Could not connect to local server on specified port. Code #" << WSAGetLastError() << std::endl;
+			std::cout << "Could not connect to local server on specified port. Code #" << WSAGetLastError() << std::endl;
 			WSACleanup();
 			break;
 		default:
@@ -160,37 +204,4 @@ void StartCommunication(char* csDisplayName)
 
 		closesocket(fdConversation);
 	}
-}
-
-int main(int argc, char* argv[])
-{
-	WSADATA wsaData;
-	int wsOk = WSAStartup(MAKEWORD(nReqVersion, 0x00), &wsaData);
-	if (wsOk == NULL)
-	{
-		if (LOBYTE(wsaData.wVersion >= nReqVersion))
-		{
-			std::promise<std::string> promiseObject2;
-			auto futureObject = promiseObject2.get_future();
-			std::thread t2(StartRegistration, std::move(promiseObject2));
-			std::string ffDisplayName = futureObject.get();
-			char* csDisplayName = (char*)ffDisplayName.c_str();
-
-			t2.join();
-
-			std::this_thread::sleep_for(2s);
-
-			StartCommunication(csDisplayName);
-		}
-		else
-		{
-			std::cerr << "Requested version is not supported." << std::endl;
-		}
-	}
-	else
-	{
-		std::cerr << "WinSock2 initial startup failed. Exiting program..." << std::endl;
-	}
-	WSACleanup();
-	ExitProcess(EXIT_SUCCESS);
 }

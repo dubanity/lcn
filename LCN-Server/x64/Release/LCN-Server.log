@@ -1,8 +1,24 @@
 ﻿  Server-Main.cpp
-     Creating library C:\Users\USER\Downloads\GitHub\LCN\x64\Release\LCN-Server.lib and object C:\Users\USER\Downloads\GitHub\LCN\x64\Release\LCN-Server.exp
-  Generating code
-  0 of 193 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
-  Finished generating code
-  LCN-Server.vcxproj -> C:\Users\USER\Downloads\GitHub\LCN\x64\Release\LCN-Server.exe
+C:\GitHub\lcn\LCN-API\UID.hpp(23,31): error C2079: 'ss' uses undefined class 'std::basic_stringstream<char,std::char_traits<char>,std::allocator<char>>'
+C:\GitHub\lcn\LCN-API\UID.hpp(27,35): error C2079: 'hex_s' uses undefined class 'std::basic_stringstream<char,std::char_traits<char>,std::allocator<char>>'
+C:\GitHub\lcn\LCN-API\UID.hpp(28,31): error C2039: 'hex': is not a member of 'std'
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037\include\random(29): message : see declaration of 'std'
+C:\GitHub\lcn\LCN-API\UID.hpp(28,1): error C2065: 'hex': undeclared identifier
+C:\GitHub\lcn\LCN-API\UID.hpp(28,35): warning C4552: '<<': result of expression not used
+C:\GitHub\lcn\LCN-API\UID.hpp(30,1): error C3536: 'hex_c': cannot be used before it is initialized
+C:\GitHub\lcn\LCN-API\UID.hpp(37,31): error C2079: 'ss' uses undefined class 'std::basic_stringstream<char,std::char_traits<char>,std::allocator<char>>'
+C:\GitHub\lcn\LCN-API\UID.hpp(41,35): error C2079: 'hex_s' uses undefined class 'std::basic_stringstream<char,std::char_traits<char>,std::allocator<char>>'
+C:\GitHub\lcn\LCN-API\UID.hpp(42,31): error C2039: 'hex': is not a member of 'std'
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037\include\random(29): message : see declaration of 'std'
+C:\GitHub\lcn\LCN-API\UID.hpp(42,1): error C2065: 'hex': undeclared identifier
+C:\GitHub\lcn\LCN-API\UID.hpp(42,35): warning C4552: '<<': result of expression not used
+C:\GitHub\lcn\LCN-API\UID.hpp(44,1): error C3536: 'hex_c': cannot be used before it is initialized
+C:\GitHub\lcn\LCN-API\UID.hpp(60,27): error C2079: 'r' uses undefined class 'std::basic_stringstream<char,std::char_traits<char>,std::allocator<char>>'
+C:\GitHub\lcn\LCN-API\UID.hpp(62,11): error C2677: binary '<<': no global operator found which takes type '_Ty' (or there is no acceptable conversion)
+          with
+          [
+              _Ty=std::string
+          ]
+C:\GitHub\lcn\LCN-API\UID.hpp(65,1): error C3536: 'rf': cannot be used before it is initialized
+C:\GitHub\lcn\LCN-API\UID.hpp(65,1): error C2440: 'return': cannot convert from 'int' to 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
+C:\GitHub\lcn\LCN-API\UID.hpp(65,1): message : No constructor could take the source type, or constructor overload resolution was ambiguous
