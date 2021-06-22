@@ -44,7 +44,7 @@ const char* nAddr = ws2vi.GetAddress();
 #pragma region Prototypes
 
 void DisplayNI(std::promise<std::string> promiseObject1);
-void StartRegistration(std::promise<std::string> promiseObject2);
+void StartRegistration(std::promise<std::string> pRegistration);
 void StartCommunication(char* csDisplayName);
 
 #pragma endregion
@@ -57,15 +57,13 @@ int main(int argc, char* argv[])
 	{
 		if (LOBYTE(wsaData.wVersion >= nReqVersion))
 		{
-			std::promise<std::string> promiseObject2;
-			auto futureObject = promiseObject2.get_future();
-			std::thread t2(StartRegistration, std::move(promiseObject2));
-			std::string ffDisplayName = futureObject.get();
+			std::promise<std::string> pRegistration;
+			auto fgRegistration = pRegistration.get_future();
+			std::thread mysql_reg_t(StartRegistration, std::move(pRegistration));
+			std::string ffDisplayName = fgRegistration.get();
 			char* csDisplayName = const_cast<char*>(ffDisplayName.c_str());
 
-			t2.join();
-
-			std::this_thread::sleep_for(2s);
+			mysql_reg_t.join();
 
 			StartCommunication(csDisplayName);
 		}
@@ -82,24 +80,24 @@ int main(int argc, char* argv[])
 	ExitProcess(EXIT_SUCCESS);
 }
 
-void DisplayNI(std::promise<std::string> promiseObject1)
+void DisplayNI(std::promise<std::string> pDisplayNI)
 {
 	std::string sDisplayName;
 	std::cout << "[ENTER A DISPLAY NAME]> ";
 	std::getline(std::cin, sDisplayName);
-	promiseObject1.set_value(sDisplayName);
+	pDisplayNI.set_value(sDisplayName);
 }
 
-void StartRegistration(std::promise<std::string> promiseObject2)
+void StartRegistration(std::promise<std::string> pRegistration)
 {
-	std::promise<std::string> promiseObject1;
-	auto futureObject = promiseObject1.get_future();
-	std::thread t1(DisplayNI, std::move(promiseObject1));
-	std::string ffDisplayName = futureObject.get();
+	std::promise<std::string> pDisplayNI;
+	auto fgDisplayNI = pDisplayNI.get_future();
+	std::thread dpy_n_fetch_t(DisplayNI, std::move(pDisplayNI));
+	std::string ffDisplayName = fgDisplayNI.get();
 	const char* csDisplayName = ffDisplayName.c_str();
-	promiseObject2.set_value(csDisplayName);
+	pRegistration.set_value(csDisplayName);
 	int dnSize = sizeof(csDisplayName);
-	t1.join();
+	dpy_n_fetch_t.join();
 
 	std::cout << "Authenticating..." << std::endl;
 
@@ -171,14 +169,6 @@ void StartCommunication(char* csDisplayName)
 			break;
 		}
 
-		/*
-		char host[NI_MAXHOST];
-		memset(&host, 0, sizeof(host));
-		char service[NI_MAXSERV];
-		memset(&service, 0, sizeof(service));
-
-		getnameinfo(reinterpret_cast<sockaddr*>(&clService), clSize, host, NI_MAXHOST, service, NI_MAXSERV, 0);
-		*/
 		char responseBuffer[4096];
 		std::string uInput;
 		CL cl;

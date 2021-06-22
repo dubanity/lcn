@@ -180,7 +180,6 @@ MySQL db;
 uint32_t nReqVersion = ws2vi.GetVersion();
 uint32_t nCommunicationsPort = ws2vi.GetCommunicationsPort();
 uint32_t nRegistrationPort = ws2vi.GetRegistrationPort();
-uint32_t nStreamPort = ws2vi.GetStreamPort();
 const char* nAddr = ws2vi.GetAddress();
 
 #pragma endregion WS2Data
@@ -189,7 +188,6 @@ const char* nAddr = ws2vi.GetAddress();
 
 void StartRegistration();
 void StartCommunication();
-void StartStream();
 
 #pragma endregion Prototypes
 
@@ -349,65 +347,5 @@ void StartCommunication()
 		}
 
 		closesocket(hcRemote);
-	}
-}
-
-void StartStream()
-{
-	SOCKET fdStream = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	switch (fdStream)
-	{
-	case INVALID_SOCKET:
-		std::cout << "[WS2]> Failed to initialize streaming socket for local server." << std::endl;
-		WSACleanup();
-		break;
-	default:
-		sockaddr_in saStreamServer;
-		saStreamServer.sin_family = AF_INET;
-		saStreamServer.sin_port = htons(nStreamPort);
-		saStreamServer.sin_addr.s_addr = inet_addr(nAddr);
-
-		int bResult = bind(fdStream, reinterpret_cast<sockaddr*>(&saStreamServer), sizeof(saStreamServer));
-		int lResult = listen(fdStream, SOMAXCONN);
-
-		std::cout << "Starting stram service..." << std::endl;
-
-		sockaddr_in rClService;
-		int rClSize = sizeof(rClService);
-
-		SOCKET hsRemote = accept(fdStream, reinterpret_cast<sockaddr*>(&rClService), &rClSize);
-		switch (hsRemote)
-		{
-		case SOCKET_ERROR:
-			break;
-		default:
-			break;
-		}
-
-		char MsgBuffer[8192];
-
-		while (true)
-		{
-			memset(MsgBuffer, 0, sizeof(MsgBuffer));
-
-			int rBytes = recv(hsRemote, MsgBuffer, 8192, 0);
-			if (rBytes == 0)
-			{
-				WSACleanup();
-				ExitProcess(EXIT_SUCCESS);
-			}
-
-			std::cout << std::string(MsgBuffer, NULL, rBytes) << std::endl;
-
-			if (send(hsRemote, MsgBuffer, rBytes, 0) == SOCKET_ERROR)
-			{
-				std::cout << "Stopped streaming information." << std::endl;
-				WSACleanup();
-				std::cin.get();
-				break;
-			}
-		}
-
-		closesocket(hsRemote);
 	}
 }
